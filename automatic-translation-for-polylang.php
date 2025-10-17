@@ -28,10 +28,6 @@ if ( ! defined( 'ATFP_FILE' ) ) {
 	define( 'ATFP_FILE', __FILE__ );
 }
 
-if ( ! defined( 'ATFP_FEEDBACK_API' ) ) {
-	define( 'ATFP_FEEDBACK_API', "https://feedback.coolplugins.net/" );
-}
-
 if ( ! class_exists( 'AutoPoly' ) ) {
 	final class AutoPoly {
 
@@ -205,9 +201,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 
 		public function atfp_load_files() {
 			require_once ATFP_DIR_PATH . '/helper/class-atfp-helper.php';
-			require_once ATFP_DIR_PATH . 'admin/atfp-menu-pages/class-atfp-custom-block-post.php';
 			require_once ATFP_DIR_PATH . 'includes/class-atfp-register-backend-assets.php';
-			require_once ATFP_DIR_PATH . '/includes/bulk-translation/class-atfp-bulk-translation.php';
 			require_once ATFP_DIR_PATH . 'includes/elementor-translate/class-atfp-elementor-translate.php';
 		}
 		/**
@@ -237,10 +231,6 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 				$this->atfp_initialize_elementor_translation();
 			} else {
 				add_action( 'admin_notices', array( self::$instance, 'atfp_plugin_required_admin_notice' ) );
-			}
-
-			if ( is_admin() ) {
-				require_once ATFP_DIR_PATH . 'admin/feedback/atfp-users-feedback.php';
 			}
 		}
 

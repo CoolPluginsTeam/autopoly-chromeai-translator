@@ -970,27 +970,6 @@ body>div.skiptranslate iframe.skiptranslate[frameborder][src][style="visibility:
     visibility: hidden !important;
 }
 
-/* meta box review notice style start */
-.atfp-review-meta-box {
-    text-align: center;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1882352941);
-    padding: 10px 0px !important;
-    border-radius: 5px !important;
-}
-
-.atfp-review-meta-box p {
-    margin: 0px;
-}
-
-.atfp-review-meta-box p a {
-    margin-top: 8px;
-}
-
-.atfp-review-meta-box p a span {
-    color: #ffb900 !important;
-    margin-left: 5px;
-}
-
 /* Skeleton Shimmer Animation */
 .atfp-loader-skeleton {
     position: absolute;
