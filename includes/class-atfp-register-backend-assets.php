@@ -29,7 +29,6 @@ class ATFP_Register_Backend_Assets
     public function __construct()
     {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_gutenberg_translate_assets'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_supported_block_scripts'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_classic_translate_assets'));
         add_action('enqueue_block_assets', array($this, 'block_inline_translation_assets'));
         add_action('admin_enqueue_scripts', array($this, 'classic_inline_translation_assets'));
@@ -52,25 +51,6 @@ class ATFP_Register_Backend_Assets
         
         if(class_exists('ATFP_Helper') && ATFP_Helper::is_translated_post_type($current_screen)){
             wp_enqueue_script('atfp-views-link-admin', ATFP_URL . 'assets/js/atfp-admin-views-link.js', array('jquery'), ATFP_V, true);
-        }
-    }
-
-    public function enqueue_supported_block_scripts(){
-        if(function_exists('get_current_screen') && property_exists(get_current_screen(), 'post_type') && 'atfp_add_blocks' === get_current_screen()->post_type){
-            wp_enqueue_style('atfp-update-custom-blocks', ATFP_URL . 'assets/css/atfp-update-custom-blocks.min.css', array(), ATFP_V);
-            wp_enqueue_script('atfp-update-custom-blocks', ATFP_URL . 'assets/js/atfp-update-custom-blocks.min.js', array('jquery'), ATFP_V, true);
-        
-            wp_localize_script(
-                'atfp-update-custom-blocks',
-                'atfp_block_update_object',
-                array(
-                    'ajax_url'       => admin_url('admin-ajax.php'),
-                    'ajax_nonce'     => wp_create_nonce('atfp_block_update_nonce'),
-                    'atfp_url'       => esc_url(ATFP_URL),
-                    'action_get_content' => 'atfp_get_custom_blocks_content',
-                    'action_update_content' => 'atfp_update_custom_blocks_content',
-                )
-            );
         }
     }
 
@@ -297,12 +277,6 @@ class ATFP_Register_Backend_Assets
 
         if (!isset(PLL()->options['sync']) || (isset(PLL()->options['sync']) && !in_array('post_meta', PLL()->options['sync']))) {
             $extra_data['postMetaSync'] = 'false';
-
-            if(in_array($editor_type, array('classic', 'gutenberg'))){
-                $extra_data['update_post_meta_fields'] = 'atfp_update_post_meta_fields';
-                $extra_data['post_meta_fields_key'] = wp_create_nonce('atfp_update_post_meta_fields');
-            }
-            
         } else {
             $extra_data['postMetaSync'] = 'true';
         }

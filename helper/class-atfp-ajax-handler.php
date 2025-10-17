@@ -23,16 +23,6 @@ if ( ! class_exists( 'ATFP_Ajax_Handler' ) ) {
 		 * @var instance
 		 */
 		private static $instance;
-		/**
-		 * Stores custom block data for processing and retrieval.
-		 *
-		 * This static array holds the data related to custom blocks that are
-		 * used within the plugin. It can be utilized to manage and manipulate
-		 * the custom block information as needed during AJAX requests.
-		 *
-		 * @var array
-		 */
-		private $custom_block_data_array = array();
 
 		/**
 		 * Gets an instance of our plugin.
@@ -55,8 +45,6 @@ if ( ! class_exists( 'ATFP_Ajax_Handler' ) ) {
 			if ( is_admin() ) {
 				add_action( 'wp_ajax_atfp_fetch_post_content', array( $this, 'fetch_post_content' ) );
 				add_action( 'wp_ajax_atfp_block_parsing_rules', array( $this, 'block_parsing_rules' ) );
-				add_action( 'wp_ajax_atfp_get_custom_blocks_content', array( $this, 'get_custom_blocks_content' ) );
-				add_action( 'wp_ajax_atfp_update_custom_blocks_content', array( $this, 'update_custom_blocks_content' ) );
 				add_action( 'wp_ajax_atfp_update_elementor_data', array( $this, 'update_elementor_data' ) );
 				add_action('wp_ajax_atfp_update_classic_translate_status', array($this, 'update_classic_translate_status'));
 			}
@@ -130,107 +118,6 @@ if ( ! class_exists( 'ATFP_Ajax_Handler' ) ) {
 			}
 
 			exit;
-		}
-
-		public function get_custom_blocks_content() {
-			if ( ! check_ajax_referer( 'atfp_block_update_nonce', 'atfp_nonce', false ) ) {
-				wp_send_json_error( __( 'Invalid security token sent.', 'autopoly-ai-translation-for-polylang' ) );
-				wp_die( '0', 400 );
-				exit();
-			}
-
-			if(!current_user_can('manage_options')){
-				wp_send_json_error( __( 'Unauthorized', 'autopoly-ai-translation-for-polylang' ), 403 );
-				wp_die( '0', 403 );
-			}
-
-			$custom_content = get_option( 'atfp_custom_block_data', false ) ? get_option( 'atfp_custom_block_data', false ) : false;
-
-			if ( $custom_content && is_string( $custom_content ) && ! empty( trim( $custom_content ) ) ) {
-				return wp_send_json_success( array( 'block_data' => $custom_content ) );
-			} else {
-				return wp_send_json_success( array( 'message' => __( 'No custom blocks found.', 'autopoly-ai-translation-for-polylang' ) ) );
-			}
-			exit();
-		}
-
-		public function update_custom_blocks_content() {
-			if ( ! check_ajax_referer( 'atfp_block_update_nonce', 'atfp_nonce', false ) ) {
-				wp_send_json_error( __( 'Invalid security token sent.', 'autopoly-ai-translation-for-polylang' ) );
-				wp_die( '0', 400 );
-			}
-
-			if(!current_user_can('edit_posts')){
-				wp_send_json_error( __( 'Unauthorized', 'autopoly-ai-translation-for-polylang' ), 403 );
-				wp_die( '0', 403 );
-			}
-
-			$json = isset($_POST['save_block_data']) ? wp_unslash($_POST['save_block_data']) : false;
-			$updated_blocks_data = json_decode($json, true);
-			if(json_last_error() !== JSON_ERROR_NONE){ 
-				wp_send_json_error( __( 'Invalid JSON', 'autopoly-ai-translation-for-polylang' ) );
-				wp_die( '0', 400 );
-			}
-
-			if ( $updated_blocks_data ) {
-				$block_parse_rules = ATFP_Helper::get_instance()->get_block_parse_rules();
-
-				if ( isset( $block_parse_rules['AtfpBlockParseRules'] ) ) {
-					$previous_translate_data = get_option( 'atfp_custom_block_translation', false );
-					if ( $previous_translate_data && ! empty( $previous_translate_data ) ) {
-						$this->custom_block_data_array = $previous_translate_data;
-					}
-
-					foreach ( $updated_blocks_data as $key => $block_data ) {
-						$this->verify_block_data( array( $key ), $block_data, $block_parse_rules['AtfpBlockParseRules'][ $key ] );
-					}
-
-					if ( count( $this->custom_block_data_array ) > 0 ) {
-						update_option( 'atfp_custom_block_translation', $this->custom_block_data_array );
-					}
-
-					delete_option( 'atfp_custom_block_data' );
-
-				}
-			}
-
-			return wp_send_json_success( array( 'message' => __( 'Automatic Translation for Polylang: Custom Blocks data updated successfully', 'autopoly-ai-translation-for-polylang' ) ) );
-		}
-
-		private function verify_block_data( $id_keys, $value, $block_rules ) {
-			$block_rules = is_object( $block_rules ) ? json_decode( json_encode( $block_rules ) ) : $block_rules;
-
-			if ( ! isset( $block_rules ) ) {
-				return $this->create_nested_attribute( $value,$id_keys );
-			}
-			if ( is_object( $value ) && isset( $block_rules ) ) {
-				foreach ( $value as $key => $item ) {
-					if ( isset( $block_rules[ $key ] ) && is_object( $item ) ) {
-						$this->verify_block_data( array_merge( $id_keys, array( $key ) ), $item, $block_rules[ $key ], false );
-						continue;
-					} elseif ( ! isset( $block_rules[ $key ] ) && true === $item ) {
-						$this->create_nested_attribute(  true,array_merge( $id_keys, array( $key ) ) );
-						continue;
-					} elseif ( ! isset( $block_rules[ $key ] ) && is_object( $item ) ) {
-						$this->create_nested_attribute(  $item,array_merge( $id_keys, array( $key ) ) );
-						continue;
-					}
-				}
-			}
-		}
-
-		private function create_nested_attribute( $value,$id_keys = array() ) {
-			$value = is_object( $value ) ? json_decode( json_encode( $value ), true ) : $value;
-
-			$current_array = &$this->custom_block_data_array;
-
-			foreach ( $id_keys as $index => $id ) {
-				if ( ! isset( $current_array[ $id ] ) ) {
-					$current_array[ $id ] = array();
-				}
-				$current_array = &$current_array[ $id ];
-			}
-				$current_array = $value;
 		}
 
 		/**
