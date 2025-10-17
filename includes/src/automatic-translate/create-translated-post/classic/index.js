@@ -263,38 +263,6 @@ const UpdateClassicPage = (props) => {
         }
     }
 
-    const updatePostMetaFields = () => {
-        const ajaxUrl=window.atfp_global_object.ajax_url;
-        const postId=window.atfp_global_object.current_post_id;
-        const nonce=window.atfp_global_object.post_meta_fields_key;
-        const action=window.atfp_global_object.update_post_meta_fields;
-        
-        if(!postId || !nonce || !action){
-            return;
-        }
-
-        const requestBody={
-            action: action,
-            post_id: postId,
-            meta_fields: JSON.stringify(translatedMetaFields(postContent.metaFields, service)),
-            post_meta_fields_key: nonce
-        }
-        
-        fetch(ajaxUrl, {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Accept': 'application/json',
-            },
-            body: new URLSearchParams(requestBody)
-        })
-        .then(response => response.json())
-        .then()
-        .catch(error => {
-            console.error('Error:', error); 
-        });
-    }
-
     /**
      * Updates the translate status.
      */
@@ -351,7 +319,7 @@ const UpdateClassicPage = (props) => {
 
     // Update all translation supported post meta fields using ajax request
     if(atfp_global_object.postMetaSync === 'false'){
-        updatePostMetaFields();
+        translatedMetaFields(postContent.metaFields, service)
     }
 
     // Update translate status
