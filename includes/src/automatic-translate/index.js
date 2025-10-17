@@ -3,6 +3,8 @@ import './global-store';
 import { useEffect, useState } from 'react';
 import GutenbergPostFetch from './fetch-post/gutenberg';
 import UpdateGutenbergPage from './create-translated-post/gutenberg';
+import ClassicPostFetch from './fetch-post/classic';
+import UpdateClassicPage from './create-translated-post/classic';
 import Notice from './component/notice';
 import { select } from '@wordpress/data';
 import { sprintf, __ } from '@wordpress/i18n';
@@ -86,6 +88,10 @@ const App = () => {
     translateWrpSelector = 'input#atfp-translate-button[name="atfp_meta_box_translate"]';
     translatePost = UpdateGutenbergPage;
     fetchPost = GutenbergPostFetch;
+  } else if (editorType === 'classic') {
+    translateWrpSelector = 'button#atfp-classic-editor-translate-button';
+    translatePost = UpdateClassicPage;
+    fetchPost = ClassicPostFetch;
   }
 
   const [postDataFetchStatus, setPostDataFetchStatus] = useState(false);
@@ -244,6 +250,25 @@ const appendElementorTranslateBtn = () => {
 }
 
 if (editorType === 'gutenberg') {
+  // Render App
+  window.addEventListener('load', () => {
+
+    // Append app root wrapper in body
+    init();
+
+    const sourceLang = window.atfp_global_object.source_lang
+
+    if (sourceLang && '' !== sourceLang) {
+      insertMessagePopup();
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('atfp-setting-modal'));
+    root.render(<App />);
+  });
+}
+
+// Classic editor translate button append
+if (editorType === 'classic') {
   // Render App
   window.addEventListener('load', () => {
 

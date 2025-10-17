@@ -30,7 +30,9 @@ class ATFP_Register_Backend_Assets
     {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_gutenberg_translate_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_supported_block_scripts'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_classic_translate_assets'));
         add_action('enqueue_block_assets', array($this, 'block_inline_translation_assets'));
+        add_action('admin_enqueue_scripts', array($this, 'classic_inline_translation_assets'));
         add_action('elementor/editor/before_enqueue_scripts', array($this, 'enqueue_elementor_translate_assets'));
         add_action('admin_enqueue_scripts', array($this, 'atfp_enqueue_admin_assets'));
     }
@@ -139,6 +141,92 @@ class ATFP_Register_Backend_Assets
                     $this->enqueue_automatic_translate_assets(pll_get_post_language($from_post_id, 'slug'), $lang, 'gutenberg', $data);
                 }
             }
+        }
+    }
+
+    
+    public function enqueue_classic_translate_assets()
+    {
+        global $post;
+        $current_screen = get_current_screen();
+        $post_translate_status = isset($post) ? get_post_meta($post->ID, '_atfp_translate_status', true) : '';
+        $post_parent_post_id = isset($post) ? get_post_meta($post->ID, '_atfp_parent_post_id', true) : '';
+
+        if(isset($current_screen) && isset($current_screen->id) && $current_screen->id === 'edit-page'){
+            return;
+        }
+
+        if (
+            isset($_GET['from_post'], $_GET['new_lang'], $_GET['_wpnonce']) &&
+            wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'new-post-translation')) {
+            $current_screen = get_current_screen();
+
+            if (method_exists($current_screen, 'is_block_editor') && !$current_screen->is_block_editor()) {
+                $from_post_id = isset($_GET['from_post']) ? absint($_GET['from_post']) : 0;
+                $from_post_id = !empty($post_parent_post_id) ? $post_parent_post_id : $from_post_id;
+
+                if (null === $post || 0 === $from_post_id) {
+                    return;
+                }
+
+                $lang           = isset($_GET['new_lang']) ? sanitize_key($_GET['new_lang']) : '';
+
+                if(!empty($post_translate_status) && $post_translate_status === 'pending') {
+                    $lang = pll_get_post_language($post->ID, 'slug');
+                }
+
+                $editor = '';
+                if ('builder' === get_post_meta($from_post_id, '_elementor_edit_mode', true) && defined('ELEMENTOR_VERSION')) {
+                    $source_lang_name = pll_get_post_language($from_post_id, 'slug');
+                    $this->enqueue_elementor_confirm_box_assets($from_post_id, $lang, $source_lang_name, 'classic');
+                    $editor = 'Elementor';
+                }
+                if ('on' === get_post_meta($from_post_id, '_et_pb_use_builder', true) && defined('ET_CORE')) {
+                    $editor = 'Divi';
+                }
+
+                if (in_array($editor, array('Elementor', 'Divi'), true)) {
+                    return;
+                }
+
+                $languages = PLL()->model->get_languages_list();
+
+                $lang_object = array();
+                foreach ($languages as $lang_obj) {
+                    $lang_object[$lang_obj->slug] = $lang_obj->name;
+                }
+
+                $post_translate = PLL()->model->is_translated_post_type($post->post_type);
+               
+
+                if ($post_translate && $lang && !empty($lang)) {
+
+                    $data = array(
+                        'action_fetch'       => 'atfp_fetch_post_content',
+                        'parent_post_id'     => $from_post_id,
+                        'action_update_status' => 'atfp_update_classic_translate_status',
+                        'classic_status_key' => wp_create_nonce('atfp_classic_translate_nonce'),
+                    );
+
+                    $parent_page_content = get_the_content(null, false, $from_post_id);
+                    $block_comment_tag = preg_match('/<!--[\s\S]*?-->/s', $parent_page_content) && strpos($parent_page_content, '<!--') < strpos($parent_page_content, '-->');
+                    
+                    if($block_comment_tag){
+                        $data['blockCommentTag']="true";       
+                    }
+
+                    $this->enqueue_automatic_translate_assets(pll_get_post_language($from_post_id, 'slug'), $lang, 'classic', $data);
+                }
+            }
+        }
+    }
+    
+    public function classic_inline_translation_assets()
+    {
+        $current_screen = get_current_screen();
+
+        if (method_exists($current_screen, 'is_block_editor') && !$current_screen->is_block_editor()) {
+            $this->enqueue_inline_translation_assets('classic');
         }
     }
 

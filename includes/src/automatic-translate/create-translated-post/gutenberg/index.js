@@ -37,28 +37,47 @@ const translatePost = (props) => {
      */
     const postMetaFieldsUpdate = () => {
         const metaFieldsData = postContent.metaFields;
-        
-        if(!metaFieldsData && Object.keys(metaFieldsData).length < 1){
-            return;
-        }
-        
-        const AllowedMetaFields = select('block-atfp/translate').getAllowedMetaFields();
 
-        Object.keys(metaFieldsData).forEach(key => {
-            // Update yoast seo meta fields
-            if (Object.keys(AllowedMetaFields).includes(key)) {
-                const translatedMetaFields = select('block-atfp/translate').getTranslatedString('metaFields', metaFieldsData[key][0], key, service);
-                if (key.startsWith('_yoast_wpseo_') && AllowedMetaFields[key].inputType === 'string') {
-                    YoastSeoFields({ key: key, value: translatedMetaFields });
-                } else if (key.startsWith('rank_math_') && AllowedMetaFields[key].inputType === 'string') {
-                    RankMathSeo({ key: key, value: translatedMetaFields });
-                } else if (key.startsWith('_seopress_') && AllowedMetaFields[key].inputType === 'string') {
-                    SeoPressFields({ key: key, value: translatedMetaFields });
-                } else {
-                    editPost({ meta: { [key]: translatedMetaFields } });
+        
+        if (window.acf) {
+            acf.getFields().forEach(field => {
+                const fieldData=JSON.parse(JSON.stringify({key: field.data.key, type: field.data.type, name: field.data.name}));
+                let repeaterField = false;
+                // Update repeater fields
+                if(field.$el && field.$el.closest('.acf-field.acf-field-repeater') && field.$el.closest('.acf-field.acf-field-repeater').length > 0){
+                    const rowId=field.$el.closest('.acf-row').data('id');
+                    const repeaterItemName=field.$el.closest('.acf-field.acf-field-repeater').data('name');
+
+                    if(rowId && '' !== rowId){
+                        const index=rowId.replace('row-', '');
+                    
+                        fieldData.name=repeaterItemName+'_'+index+'_'+fieldData.name;
+                        repeaterField = true;
+                    }
+
                 }
-            };
-        });
+
+               if(field.data && field.data.key && Object.keys(AllowedMetaFields).includes(fieldData.name)){
+                   const fieldName = field.data.name;
+                   const inputType = field.data.type;
+
+                   const sourceValue = metaFieldsData[fieldName] && metaFieldsData[fieldName][0] ? metaFieldsData[fieldName][0] : field?.val();
+
+                    const translatedMetaFields = select('block-atfp/translate').getTranslatedString('metaFields', sourceValue, fieldData.name, service);
+
+                    if(!translatedMetaFields || '' === translatedMetaFields){
+                        return;
+                    }
+
+                    if('wysiwyg' === inputType && window.tinymce){
+                        const editorId = field.data.id;
+                        tinymce.get(editorId)?.setContent(translatedMetaFields);
+                    }else{
+                        field.val(translatedMetaFields);
+                    }
+               }
+            });
+        }
     }
 
     /**

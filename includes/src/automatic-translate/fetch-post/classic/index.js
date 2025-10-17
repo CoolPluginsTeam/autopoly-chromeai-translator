@@ -1,12 +1,10 @@
-import GutenbergBlockSaveSource from "../../store-source-string/gutenberg";
-import { dispatch, select } from "@wordpress/data";
-import { parse } from "@wordpress/blocks";
+import { select, dispatch } from "@wordpress/data";
 import { __ } from "@wordpress/i18n";
+import ClassicSaveSource from "../../store-source-string/classic";
 import AllowedMetaFields from "../../allowed-meta-fields";
 
-const GutenbergPostFetch = async (props) => {
+const ClassicPostFetch = async (props) => {
     const apiUrl = atfp_global_object.ajax_url;
-    let blockRules = wp.data.select('block-atfp/translate').getBlockRules() || {};
     const apiController = [];
 
     const destroyHandler = () => {
@@ -18,7 +16,7 @@ const GutenbergPostFetch = async (props) => {
     props.updateDestroyHandler(() => {
         destroyHandler();
     });
-    
+
     // Update allowed meta fields
     const updateAllowedMetaFields = (data) => {
         dispatch('block-atfp/translate').allowedMetaFields(data);
@@ -65,44 +63,8 @@ const GutenbergPostFetch = async (props) => {
     // Update ACF fields allowed meta fields
     AcfFields();
 
-    const BlockParseFetch = async () => {
-
-        if (blockRules && blockRules.AtfpBlockParseRules && Object.keys(blockRules.AtfpBlockParseRules).length > 0) {
-            return;
-        }
-
-        const blockRulesApiSendData = {
-            atfp_nonce: atfp_global_object.ajax_nonce,
-            action: atfp_global_object.action_block_rules
-        };
-
-
-        const rulesController = new AbortController();
-        apiController.push(rulesController);
-        await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Accept': 'application/json',
-            },
-            body: new URLSearchParams(blockRulesApiSendData),
-            signal: rulesController.signal,
-        })
-            .then(response => response.json())
-            .then(data => {
-                blockRules = JSON.parse(data.data.blockRules);
-                dispatch('block-atfp/translate').setBlockRules(blockRules);
-
-            })
-            .catch(error => {
-                console.error('Error fetching post content:', error);
-            });
-    }
-
-    await BlockParseFetch();
-
     const ContentFetch = async () => {
-        
+
         const contentFetchStatus = select('block-atfp/translate').contentFetchStatus();
         if (contentFetchStatus) {
             return;
@@ -146,12 +108,7 @@ const GutenbergPostFetch = async (props) => {
                 }
 
                 const post_data = data.data;
-
-                if (post_data.content && post_data.content.trim() !== '') {
-                    post_data.content = parse(post_data.content);
-                }
-
-                GutenbergBlockSaveSource(post_data, blockRules);
+                ClassicSaveSource(post_data);
                 props.refPostData(post_data);
                 props.updatePostDataFetch(true);
                 dispatch('block-atfp/translate').contentFetchStatus(true);
@@ -164,4 +121,4 @@ const GutenbergPostFetch = async (props) => {
     await ContentFetch();
 };
 
-export default GutenbergPostFetch;
+export default ClassicPostFetch;

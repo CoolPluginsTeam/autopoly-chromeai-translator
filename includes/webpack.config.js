@@ -65,7 +65,7 @@ const customConfig = (argv) => {
 module.exports = (env, argv) => {
   if ((argv.mode === "production" || argv.mode === "development") && argv.env && argv.env.inlineTranslate) {
 
-    const inlineDirectories = ['elementor', 'block'];
+    const inlineDirectories = ['elementor','classic', 'block'];
 
     const inlineConfigDirectories = inlineDirectories.map(name => {
       const dirDist = path.resolve(__dirname, "../assets/" + name + "-inline-translation");

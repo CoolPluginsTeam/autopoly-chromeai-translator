@@ -61,16 +61,8 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 			register_activation_hook( ATFP_FILE, array( $this, 'atfp_activate' ) );
 			register_deactivation_hook( ATFP_FILE, array( $this, 'atfp_deactivate' ) );
 			add_action('init', array($this, 'load_plugin_textdomain'));
-
-			// Initialize feedback notice.
-			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'atfp_plugin_action_links' ) );
-
 			add_action('current_screen', array($this, 'atfp_append_view_languages_link'));
-		}
-
-		public function atfp_plugin_action_links($links) {
-			$links[] = '<a href="https://coolplugins.net/product/autopoly-ai-translation-for-polylang/?utm_source=atfp_plugin&utm_medium=inside&utm_campaign=get_pro&utm_content=plugin_list" target="_blank">' . __( 'Buy Pro', 'autopoly-ai-translation-for-polylang' ) . '</a>';
-			return $links;
+			add_action( 'media_buttons', array( $this, 'atfp_classic_editor_button' ) );
 		}
 		
 		/*
@@ -322,6 +314,61 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 						add_meta_box( 'atfp-meta-box', __( 'Automatic Translate', 'autopoly-ai-translation-for-polylang' ), array( $this, 'atfp_shortcode_text' ), null, 'side', 'high' );
 					}
 				}
+			}
+		}
+
+		function atfp_classic_editor_button() {
+			global $polylang;
+			global $post;
+
+			if(!isset($post) || !isset($post->ID)){
+				return;
+			}
+
+			$atfp_polylang = $polylang;
+			$post_translate_status = get_post_meta($post->ID, '_atfp_translate_status', true);
+			$post_parent_post_id = get_post_meta($post->ID, '_atfp_parent_post_id', true);
+
+			if ( isset( $atfp_polylang ) && is_admin() ) {
+				if ( (isset( $_GET['from_post'], $_GET['new_lang'], $_GET['_wpnonce'] ) &&
+				 wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'new-post-translation' ))) {
+
+				$post_id = isset( $_GET['from_post'] ) ? absint( $_GET['from_post'] ) : 0;
+				$post_id = !empty($post_parent_post_id) ? $post_parent_post_id : $post_id;
+
+				if ( 0 === $post_id ) {
+					return;
+				}
+				
+				$editor = '';
+				if ( 'builder' === get_post_meta( $post_id, '_elementor_edit_mode', true ) && defined('ELEMENTOR_VERSION') ) {
+					$editor = 'Elementor';
+				}
+				if ( 'on' === get_post_meta( $post_id, '_et_pb_use_builder', true ) && defined('ET_CORE') ) {
+					$editor = 'Divi';
+				}
+
+				$current_screen = get_current_screen();
+				if ( method_exists( $current_screen, 'is_block_editor' ) && !$current_screen->is_block_editor() && ! in_array( $editor, array( 'Elementor', 'Divi' ), true ) ) {
+					if ( ('post-new.php' === $GLOBALS['pagenow'] && isset( $_GET['from_post'], $_GET['new_lang'] )) || (!empty($post_translate_status) && $post_translate_status === 'pending' && !empty($post_parent_post_id)) ) {
+
+						if ( ! ( $post instanceof WP_Post ) ) {
+							return;
+						}
+
+						if ( ! function_exists( 'PLL' ) || ! PLL()->model->is_translated_post_type( $post->post_type ) ) {
+							return;
+						}
+
+						if(empty($post_translate_status) && empty($post_parent_post_id)) {
+							update_post_meta($post->ID, '_atfp_translate_status', 'pending');
+							update_post_meta($post->ID, '_atfp_parent_post_id', $post_id);
+						}
+						
+						echo '<button class="button button-primary" id="atfp-classic-editor-translate-button">' . esc_html__( 'Translate Page', 'autopoly-ai-translation-for-polylang-pro' ) . '</button>';
+					}
+				}
+			}
 			}
 		}
 
