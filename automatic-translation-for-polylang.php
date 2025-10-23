@@ -8,6 +8,7 @@ Description: AutoPoly - Chrome AI Translation For Polylang simplifies your trans
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: autopoly-ai-translation-for-polylang
+Requires Plugins: polylang
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -70,48 +71,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 		|------------------------------------------------------------------------
 		*/
 
-		public static function atfp_get_user_info() {
-			global $wpdb;
-			$server_info = [
-			'server_software'        => sanitize_text_field($_SERVER['SERVER_SOFTWARE'] ?? 'N/A'),
-			'mysql_version'          => sanitize_text_field($wpdb->get_var("SELECT VERSION()")),
-			'php_version'            => sanitize_text_field(phpversion()),
-			'wp_version'             => sanitize_text_field(get_bloginfo('version')),
-			'wp_debug'               => sanitize_text_field(defined('WP_DEBUG') && WP_DEBUG ? 'Enabled' : 'Disabled'),
-			'wp_memory_limit'        => sanitize_text_field(ini_get('memory_limit')),
-			'wp_max_upload_size'     => sanitize_text_field(ini_get('upload_max_filesize')),
-			'wp_permalink_structure' => sanitize_text_field(get_option('permalink_structure', 'Default')),
-			'wp_multisite'           => sanitize_text_field(is_multisite() ? 'Enabled' : 'Disabled'),
-			'wp_language'            => sanitize_text_field(get_option('WPLANG', get_locale()) ?: get_locale()),
-			'wp_prefix'              => sanitize_key($wpdb->prefix), // Sanitizing database prefix
-			];
-			$theme_data = [
-			'name'      => sanitize_text_field(wp_get_theme()->get('Name')),
-			'version'   => sanitize_text_field(wp_get_theme()->get('Version')),
-			'theme_uri' => esc_url(wp_get_theme()->get('ThemeURI')),
-			];
-			if (!function_exists('get_plugins')) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-			$plugin_data = array_map(function ($plugin) {
-			$plugin_info = get_plugin_data(WP_PLUGIN_DIR . '/' . sanitize_text_field($plugin));
-			$author_url = ( isset( $plugin_info['AuthorURI'] ) && !empty( $plugin_info['AuthorURI'] ) ) ? esc_url( $plugin_info['AuthorURI'] ) : 'N/A';
-			$plugin_url = ( isset( $plugin_info['PluginURI'] ) && !empty( $plugin_info['PluginURI'] ) ) ? esc_url( $plugin_info['PluginURI'] ) : '';
-			return [
-				'name'       => sanitize_text_field($plugin_info['Name']),
-				'version'    => sanitize_text_field($plugin_info['Version']),
-				'plugin_uri' => !empty($plugin_url) ? $plugin_url : $author_url,
-			];
-			}, get_option('active_plugins', []));
-			return [
-				'server_info' => $server_info,
-				'extra_details' => [
-					'wp_theme' => $theme_data,
-					'active_plugins' => $plugin_data,
-				]
-			];
-		}
-
+		
 		public function atfp_append_view_languages_link($current_screen) {
 			if(is_admin()) {
 
@@ -220,9 +180,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 				$this->atfp_register_backend_assets();
 
 				$this->atfp_initialize_elementor_translation();
-			} else {
-				add_action( 'admin_notices', array( self::$instance, 'atfp_plugin_required_admin_notice' ) );
-			}
+			} 
 		}
 
 		/**
@@ -233,28 +191,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 		}
 
 
-		/**
-		 * Display admin notice for required plugin activation.
-		 *
-		 * @return void
-		 */
-		function atfp_plugin_required_admin_notice() {
-			if ( current_user_can( 'activate_plugins' ) ) {
-				$url         = 'plugin-install.php?tab=plugin-information&plugin=polylang&TB_iframe=true';
-				$title       = 'Polylang';
-				$plugin_info = get_plugin_data( __FILE__, true, true );
-				echo '<div class="error"><p>' .
-				sprintf(
-					// translators: 1: Plugin Name, 2: Plugin URL
-					esc_html__(
-						'In order to use %1$s plugin, please install and activate the latest version  of %2$s',
-						'autopoly-ai-translation-for-polylang'
-					),
-					wp_kses( '<strong>' . esc_html( $plugin_info['Name'] ) . '</strong>', 'strong' ),
-					wp_kses( '<a href="' . esc_url( $url ) . '" class="thickbox" title="' . esc_attr( $title ) . '">' . esc_html( $title ) . '</a>', 'a' )
-				) . '.</p></div>';
-			}
-		}
+		
 
 		/**
 		 * Register backend assets for Automatic Translation for Polylang plugin.
@@ -405,20 +342,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 			update_option( 'atfp-type', 'FREE' );
 			update_option( 'atfp-installDate', gmdate( 'Y-m-d h:i:s' ) );
 
-			if(!get_option('atfp-install-date')) {
-				add_option('atfp-install-date', gmdate('Y-m-d h:i:s'));
-			}
-
-			if (!get_option( 'atfp_initial_save_version' ) ) {
-				add_option( 'atfp_initial_save_version', ATFP_V );
-			}
-
-			$get_opt_in = get_option('atfp_feedback_opt_in');
 			
-			if ($get_opt_in =='yes' && !wp_next_scheduled('atfp_extra_data_update')) {
-
-				wp_schedule_event(time(), 'every_30_days', 'atfp_extra_data_update');
-			}
 		}
 
 		/*
@@ -427,7 +351,7 @@ if ( ! class_exists( 'AutoPoly' ) ) {
 		|----------------------------------------------------------------------------
 		*/
 		public static function atfp_deactivate() {
-			wp_clear_scheduled_hook('atfp_extra_data_update');
+			
 		}
 
 	}

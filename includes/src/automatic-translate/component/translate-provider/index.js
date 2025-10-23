@@ -5,9 +5,9 @@ import { sprintf, __ } from "@wordpress/i18n";
  * Provides translation services using local AI Translator.
  */
 export default (props) => {
-    props=props || {};
-    const { Service = false, openErrorModalHandler=()=>{} } = props;
-    const assetsUrl = window.atfp_global_object.atfp_url+'assets/images/';
+    props = props || {};
+    const { Service = false, openErrorModalHandler = () => { } } = props;
+    const assetsUrl = window.atfp_global_object.atfp_url + 'assets/images/';
     const errorIcon = assetsUrl + 'error-icon.svg';
 
     const Services = {
@@ -17,7 +17,7 @@ export default (props) => {
             SettingBtnText: "Translate",
             serviceLabel: "Chrome AI Translator",
             heading: sprintf(__("Translate Using %s", 'autopoly-ai-translation-for-polylang'), "Chrome built-in API"),
-            Docs: "https://docs.coolplugins.net/doc/chrome-ai-translation-polylang/?utm_source=atfp_plugin&utm_medium=inside&utm_campaign=docs&utm_content=popup_chrome",
+            Docs: "https://developer.chrome.com/docs/ai/translator-api",
             BetaEnabled: true,
             ButtonDisabled: props.localAiTranslatorButtonDisabled,
             ErrorMessage: props.localAiTranslatorButtonDisabled ? <div className="atfp-provider-error button button-primary" onClick={() => openErrorModalHandler("localAiTranslator")}><img src={errorIcon} alt="error" /> {__('View Error', 'autopoly-ai-translation-for-polylang')}</div> : <></>,
