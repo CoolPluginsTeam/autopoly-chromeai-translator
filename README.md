@@ -1,4 +1,4 @@
-=== AutoPoly - AI Translation For Polylang ===
+=== AutoPoly - Chrome AI Translation For Polylang ===
 Contributors: narinder-singh,satindersingh,coolplugins
 Tags: Polylang, AI Translation, Content Translation, Translate
 Requires at least: 5.0
@@ -40,7 +40,7 @@ Whether you're using **Elementor** or **Gutenberg**, this addon makes the transl
 wp-content/plugins/autopoly-chromeai-translator/
 
 3. **Activate the Plugin:**
-   * After installation, click **Activate** to enable **AutoPoly - AI Translation For Polylang** on your site.
+   * After installation, click **Activate** to enable **AutoPoly - Chrome AI Translation For Polylang** on your site.
 
 Your plugin is now ready to use. You can access its settings and begin translating your content automatically.
 
